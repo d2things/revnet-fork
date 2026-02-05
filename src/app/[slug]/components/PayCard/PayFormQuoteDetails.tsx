@@ -31,7 +31,7 @@ export function PayFormQuoteDetails(props: Props) {
     <>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="px-2 py-1 text-xs bg-zinc-200 hover:bg-zinc-300 rounded-sm"
+        className="px-2 py-1 text-xs bg-zinc-200 hover:bg-zinc-300 rounded-xs"
       >
         {quote.type === "amm" ? "AMM" : "Issuance"}
       </button>

@@ -21,7 +21,7 @@ export const RichPreview = ({ source }: { source: string }) => {
     const purified = DOMPurify.sanitize(source.trim());
     return (
       <div
-        className="break-words [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:decoration-teal-500"
+        className="wrap-break-word [&_a]:underline [&_a]:underline-offset-2 [&_a:hover]:decoration-teal-500"
         dangerouslySetInnerHTML={{
           __html: purified,
         }}
@@ -29,6 +29,6 @@ export const RichPreview = ({ source }: { source: string }) => {
     );
   } catch (error) {
     console.error("HTML sanitization failed:", error);
-    return <div className="break-words">{source}</div>;
+    return <div className="wrap-break-word">{source}</div>;
   }
 };

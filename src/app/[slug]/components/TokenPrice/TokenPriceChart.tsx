@@ -119,7 +119,7 @@ export function TokenPriceChart({
       {hasData ? (
         <ChartContainer
           config={chartConfig}
-          className="mt-6 aspect-[4/3] sm:aspect-[2/1] lg:aspect-[5/2] w-full"
+          className="mt-6 aspect-4/3 sm:aspect-2/1 lg:aspect-5/2 w-full"
         >
           <LineChart
             data={filteredData}
@@ -190,7 +190,7 @@ export function TokenPriceChart({
           </LineChart>
         </ChartContainer>
       ) : (
-        <div className="aspect-[4/3] sm:aspect-[2/1] lg:aspect-[5/2] w-full flex items-center justify-center text-zinc-500">
+        <div className="aspect-4/3 sm:aspect-2/1 lg:aspect-5/2 w-full flex items-center justify-center text-zinc-500">
           {isLoading ? "Loading..." : "No price data available"}
         </div>
       )}

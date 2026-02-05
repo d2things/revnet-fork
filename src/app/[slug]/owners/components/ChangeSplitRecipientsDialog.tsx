@@ -141,7 +141,7 @@ export function ChangeSplitRecipientsDialog(props: Props) {
                         );
 
                         return (
-                          <div key={chain.chainId} className="border border-zinc-200 p-4 rounded">
+                          <div key={chain.chainId} className="border border-zinc-200 p-4 rounded-sm">
                             <div className="flex items-center gap-2 mb-4">
                               <ChainLogo chainId={chain.chainId} width={24} height={24} />
                               <h3 className="text-md font-semibold">

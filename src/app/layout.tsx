@@ -36,9 +36,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body
         className={twMerge(
+          simplonNorm.className,
           simplonNorm.variable,
           simplonMono.variable,
-          "text-zinc-950 font-sans min-h-screen tracking-[0.015em]",
+          "text-zinc-950 min-h-screen tracking-[0.015em]",
         )}
       >
         <Providers>

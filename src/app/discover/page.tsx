@@ -133,7 +133,7 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="container mt-40 pr-[1.5rem] pl-[1.5rem] sm:pr-[2rem] sm:pl-[2rem] sm:px-8">
+    <div className="container mt-40 pr-6 pl-6 sm:pr-8 sm:pl-8 sm:px-8">
       {user?.pfp && (
         <div className="flex items-center mb-4">
           <span className="text-lg">Hello {user.userName}!</span>
@@ -164,7 +164,7 @@ export default function Page() {
             <Link
               key={p.projectId}
               href={`/eth:${p.projectId}`}
-              className="border border-zinc-200 rounded-lg p-4 shadow hover:shadow-md transition block"
+              className="border border-zinc-200 rounded-lg p-4 shadow-sm hover:shadow-md transition block"
             >
               <MiniHeaderCard
                 logoUri={p.logoUri}

@@ -35,7 +35,7 @@ export function CurrentIssuanceSection() {
   const splitPercent = rulesetMetadata?.data?.reservedPercent;
 
   if (!ruleset?.data || !rulesetMetadata?.data) {
-    return <div className="h-16 animate-pulse bg-zinc-100 rounded" />;
+    return <div className="h-16 animate-pulse bg-zinc-100 rounded-sm" />;
   }
 
   return (

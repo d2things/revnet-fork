@@ -56,7 +56,7 @@ export function IssuancePriceChart({ rulesets }: Props) {
     <ChartContainer
       key={range}
       config={chartConfig}
-      className="aspect-[4/3] sm:aspect-[2/1] lg:aspect-[5/2] w-full"
+      className="aspect-4/3 sm:aspect-2/1 lg:aspect-5/2 w-full"
     >
       <AreaChart
         accessibilityLayer
@@ -108,7 +108,7 @@ export function IssuancePriceChart({ rulesets }: Props) {
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[--color-price]" />
+                  <span className="w-2 h-2 rounded-full bg-(--color-price)" />
                   <span className="text-zinc-400">Price:</span>
                   <span className="font-mono text-white">
                     {formatDecimals(value, 6)} {baseToken?.symbol} / {tokenSymbol}

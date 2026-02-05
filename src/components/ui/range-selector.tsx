@@ -32,7 +32,7 @@ export function RangeSelector<T extends string>({ ranges, defaultValue }: Props<
           className={cn(
             "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
             currentValue === value
-              ? "bg-white text-zinc-900 shadow-sm"
+              ? "bg-white text-zinc-900 shadow-xs"
               : "text-zinc-500 hover:text-zinc-700",
           )}
         >

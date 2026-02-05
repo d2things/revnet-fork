@@ -147,7 +147,7 @@ export async function SuckerTransactionsTable(props: Props) {
 function StatusBadge({ status }: { status: SuckerTransaction["status"] }) {
   return (
     <span
-      className={cn("inline-block px-2 py-1 rounded text-xs", {
+      className={cn("inline-block px-2 py-1 rounded-sm text-xs", {
         "bg-green-100 text-green-800": status === "claimed",
         "bg-yellow-100 text-yellow-800": status === "pending",
         "bg-orange-100 text-orange-800": status === "claimable",

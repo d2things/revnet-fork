@@ -187,7 +187,7 @@ export function StagesTable({ rulesets }: Props) {
                 <div className="flex items-center gap-2">
                   <span>Stage {stage.stageNumber}</span>
                   {stage.isCurrent && (
-                    <span className="rounded-full h-2 w-2 bg-orange-400 border-[2px] border-orange-200" />
+                    <span className="rounded-full h-2 w-2 bg-orange-400 border-2 border-orange-200" />
                   )}
                 </div>
               </TableCell>

@@ -22,7 +22,7 @@ export function DescriptionSection({ projects }: Props) {
   const links = getProjectLinks(metadata?.data);
 
   return (
-    <div className="max-w-screen-sm space-y-4">
+    <div className="max-w-(--breakpoint-sm) space-y-4">
       <div className="text-gray-600 text-base">
         <RichPreview source={description || ""} />
       </div>
