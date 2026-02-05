@@ -17,10 +17,11 @@ const PROJECTION_RANGES: { value: ProjectionRange; label: string }[] = [
 ];
 
 interface Props {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export default async function Terms({ params }: Props) {
+export default async function Terms(props: Props) {
+  const params = await props.params;
   const { chainId, projectId, version } = parseSlug(params.slug);
 
   const project = await getProject(projectId, chainId, version);

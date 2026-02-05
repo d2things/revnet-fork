@@ -33,7 +33,7 @@ const useIsMobile = () => {
 const TooltipProvider = TooltipPrimitive.Provider;
 
 const Tooltip = React.forwardRef<
-  React.ElementRef<typeof TooltipPrimitive.Root>,
+  React.ComponentRef<typeof TooltipPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>
 >(({ children, ...props }, ref) => {
   const [open, setOpen] = React.useState<boolean>(props.defaultOpen ?? false);

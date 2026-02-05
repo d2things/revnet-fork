@@ -20,11 +20,12 @@ import { getRulesets } from "./terms/getRulesets";
 export const revalidate = 300;
 
 interface Props {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const headersList = headers();
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
+  const headersList = await headers();
   const host = headersList.get("host");
   const proto = headersList.get("x-forwarded-proto") || "http";
   const origin = `${proto}://${host}`;
@@ -87,7 +88,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default async function SlugLayout({ children, params }: PropsWithChildren<Props>) {
+export default async function SlugLayout(props: PropsWithChildren<Props>) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
   const { chainId, projectId, version } = parseSlug(params.slug);
 
   const project = await getProject(projectId, chainId, version);

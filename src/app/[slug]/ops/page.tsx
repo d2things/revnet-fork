@@ -15,13 +15,13 @@ import { getSuckerTransactions } from "../getSuckerTransactions";
 const statusSchema = z.enum(["pending", "claimable", "claimed"]);
 
 interface Props {
-  params: { slug: string };
-  searchParams: { status?: string };
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ status?: string }>;
 }
 
 export default async function OpsPage(props: Props) {
-  const { slug } = props.params;
-  const { status } = props.searchParams;
+  const { slug } = (await props.params);
+  const { status } = (await props.searchParams);
   const { chainId, projectId, version } = parseSlug(slug);
 
   const project = await getProject(projectId, chainId, version);
