@@ -95,8 +95,8 @@ export function ActivityFeed({ suckerGroupId, projects }: Props) {
         <div className="max-h-[400px] overflow-y-auto pr-1">
           {visibleEvents.length > 0 ? (
             <div className="flex flex-col">
-              {visibleEvents.map((event) => (
-                <ActivityItem key={event.txHash} event={event} />
+              {visibleEvents.map((event, index) => (
+                <ActivityItem key={`${event.txHash}-${index}`} event={event} />
               ))}
             </div>
           ) : (

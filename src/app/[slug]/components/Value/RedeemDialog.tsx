@@ -156,7 +156,7 @@ export function RedeemDialog(props: PropsWithChildren<Props>) {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Cash out</DialogTitle>
-          <DialogDescription>
+          <div className="text-sm text-zinc-500 dark:text-zinc-400">
             <div className="my-4">
               {isSuccess ? (
                 <div>Success! You can close this window.</div>
@@ -265,7 +265,7 @@ export function RedeemDialog(props: PropsWithChildren<Props>) {
                 </>
               )}
             </div>
-          </DialogDescription>
+          </div>
           <DialogFooter>
             {!isSuccess ? (
               <ButtonWithWallet
