@@ -82,8 +82,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Revnet",
     openGraph: {
-      title: "Revnet",
-      description: "Explore onchain revenue networks",
+      title: "Revnet - Explore onchain revenue networks",
+      description: "Revnet protocol allows organisations and individuals alike to collect, process, and tokenize payments from anyone, across all chains.",
       url: url.href,
       images: [
         {
@@ -97,8 +97,8 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: "Revnet",
-      description: "Explore onchain revenue networks",
+      title: "Revnet - Explore onchain revenue networks",
+      description: "Revnet protocol allows organisations and individuals alike to collect, process, and tokenize payments from anyone, across all chains.",
       images: [imgUrl],
     },
     other: {
