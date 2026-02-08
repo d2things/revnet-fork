@@ -38,3 +38,22 @@ body {
     --chart-5: oklch(0.645 0.246 16.439);
   }
 }
+
+.activeSkeleton {
+  background: linear-gradient(
+      100deg,
+      rgba(152, 130, 130, 0) 40%,
+      #b6b6b6 50%,
+      rgba(106, 96, 96, 0) 60%
+    )
+    #c9c9c9;
+  background-size: 200% 100%;
+  background-position-x: 180%;
+  animation: 1s skeletonAnimation ease-in-out infinite;
+}
+
+@keyframes skeletonAnimation {
+  to {
+    background-position-x: -20%;
+  }
+}

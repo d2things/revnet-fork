@@ -8,6 +8,7 @@ import { Field, Formik } from "formik";
 import { FixedInt } from "fpnum";
 import { useJBTokenContext } from "juice-sdk-react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useDebounce } from "use-debounce";
 import { parseUnits } from "viem";
 import { PayDialog } from "./PayDialog";
 import { PayFormQuoteDetails } from "./PayFormQuoteDetails";
@@ -30,8 +31,9 @@ export function PayForm() {
   const tokens = useMemo(() => getTokensForChain(chainId), [chainId]);
   const [tokenIn, setTokenIn] = useState<Token | undefined>();
 
-  const deferredAmountA = useDeferredValue(amountA);
+  const [debouncedAmountA] = useDebounce(amountA, 500);
   const deferredTokenIn = useDeferredValue(tokenIn);
+  const isDebouncingAmtA = debouncedAmountA !== amountA;
 
   useEffect(() => {
     if (!baseToken) return;
@@ -41,22 +43,23 @@ export function PayForm() {
   useEffect(() => {
     if (isPriceLoading) return;
 
-    if (!deferredAmountA || !deferredTokenIn) {
+    if (!debouncedAmountA || !deferredTokenIn) {
       setQuotes({ all: [] });
       setAmountB("");
       setAmountC("");
       return;
     }
 
-    tokenAToBQuote(deferredAmountA, deferredTokenIn).then((quotes) => {
+    tokenAToBQuote(debouncedAmountA, deferredTokenIn).then((quotes) => {
       setQuotes(quotes);
+      // todo, add skeleton if amount b is 0 (amountB being toFixed(3) blocks this)
       if (quotes.bestOnSelectedChain) {
         setAmountB(quotes.bestOnSelectedChain.payerTokens.format(3));
         setAmountC(quotes.bestOnSelectedChain.reservedTokens.format(3));
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deferredAmountA, deferredTokenIn, isPriceLoading]);
+  }, [debouncedAmountA, deferredTokenIn, isPriceLoading]);
 
   if (!tokenB) return "Loading...";
 
@@ -91,6 +94,12 @@ export function PayForm() {
           className="border-b border-zinc-200 border-t border-l border-r"
           onChange={(e) => {
             const valueRaw = e.target.value;
+            
+            // this prevents scrolling to negative values when focused on an input
+            if (valueRaw.startsWith("-")) {
+              setAmountA("0");
+              return;
+            }
             setAmountA(valueRaw);
             if (!valueRaw) resetForm();
           }}
@@ -105,9 +114,13 @@ export function PayForm() {
           <div className="flex items-center justify-between mb-1">
             <div className="flex flex-col flex-1">
               <label className="text-md text-black-700">You get</label>
-              <div className="text-2xl text-zinc-900">
-                {_amountA.amount._value > 0n ? amountB || "0.00" : "0.00"}
-              </div>
+              {amountA && (isDebouncingAmtA || isPriceLoading) ? (
+                <div className="activeSkeleton h-[30px] my-[1px] w-24 opacity-60 rounded-sm" />
+              ) : (
+                <div className="text-2xl text-zinc-900 cursor-not-allowed">
+                  {_amountA.amount._value > 0n ? amountB || "0.00" : "0.00"}
+                </div>
+              )}
             </div>
             <div className="flex flex-col items-end gap-2">
               <span className="text-right select-none text-lg">
@@ -131,9 +144,9 @@ export function PayForm() {
             name="memo"
             rows={2}
             className={
-              "flex w-full border border-zinc-200 bg-white px-3 py-1.5 text-md ring-offset-white file:border-0 file:bg-transparent file:text-md file:font-medium placeholder:text-zinc-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300 z-10"
+              "flex w-full min-h-[40px] h-[40px] border border-zinc-200 bg-white px-3 py-1.5 text-md ring-offset-white file:border-0 file:bg-transparent file:text-md file:font-medium placeholder:text-zinc-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300 z-10"
             }
-            onChange={(e: any) => setMemo?.(e.target.value)}
+            onChange={(e: any) => setMemo(e.target.value)}
             placeholder="Leave a note"
           />
         </Formik>

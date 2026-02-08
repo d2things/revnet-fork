@@ -6,6 +6,49 @@ import { PayOnSelect } from "./PayOnSelect";
 import { useSelectedSucker } from "./SelectedSuckerContext";
 import { TokenSelector } from "./TokenSelector";
 
+export const preventMinusKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // prevent scientific notation 
+  const invalidKeys = ["e", "E", "+", "-", "ArrowUp", "ArrowDown"];
+  const key = e.key;
+
+  // Allow all control/navigation keys:
+  const controlKeys = [
+    "Backspace",
+    "Delete",
+    "Tab",
+    "Escape",
+    "Enter",
+    "Home",
+    "End",
+    "ArrowLeft",
+    "ArrowRight",
+  ];
+
+  if (controlKeys.includes(key)) {
+    return; // allow
+  }
+
+  // Block invalid characters
+  if (invalidKeys.includes(key)) {
+    e.preventDefault();
+    return;
+  }
+
+  // Key is a single character. Ensure it's a digit or decimal point.
+  if (!/[\d.]/.test(key)) {
+    e.preventDefault();
+    return;
+  }
+
+  const current = e.currentTarget.value;
+  const next = current + key;
+
+  // Limit total length to 16
+  if (next.length > 16) {
+    e.preventDefault();
+  }
+};
+
 export interface PayInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   withPayOnSelect?: boolean;
@@ -51,6 +94,7 @@ const PayInput = React.forwardRef<HTMLInputElement, PayInputProps>(
               "border-0 bg-transparent pl-0 pr-3 pt-1 pb-0 text-zinc-900 text-2xl w-full placeholder:text-zinc-400 focus:ring-0 sm:leading-6",
               inputClassName,
             )}
+            onKeyDown={preventMinusKey}
             ref={ref}
             placeholder="0.00"
             {...props}
