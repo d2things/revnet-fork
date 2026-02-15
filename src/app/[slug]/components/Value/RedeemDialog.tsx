@@ -32,7 +32,6 @@ import {
   JB_CHAINS,
   JB_TOKEN_DECIMALS,
   jbMultiTerminalAbi,
-  JBProjectToken,
   NATIVE_TOKEN,
 } from "juice-sdk-core";
 import {
@@ -45,8 +44,10 @@ import {
   useSuckersUserTokenBalance,
 } from "juice-sdk-react";
 import { PropsWithChildren, useState } from "react";
+import { useDebounce } from "use-debounce";
 import { parseUnits } from "viem";
 import { useAccount, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { preventMinusKey } from "../PayCard/PayInput";
 
 interface Props {
   projectId: bigint;
@@ -58,6 +59,9 @@ interface Props {
 export function RedeemDialog(props: PropsWithChildren<Props>) {
   const { projectId, tokenSymbol, disabled, children, surpluses } = props;
   const [redeemAmount, setRedeemAmount] = useState<string>();
+
+  const [redeemAmountDebounce] = useDebounce(redeemAmount, 500);
+  const isRedeemAmtDebouncing = redeemAmount !== redeemAmountDebounce;
 
   const {
     contracts: { primaryNativeTerminal },
@@ -101,7 +105,10 @@ export function RedeemDialog(props: PropsWithChildren<Props>) {
   const projectTokenDecimals = token?.data?.decimals || JB_TOKEN_DECIMALS;
 
   const redeemAmountBN = redeemAmount
-    ? JBProjectToken.parse(redeemAmount, projectTokenDecimals).value
+    ? parseUnits(redeemAmount, projectTokenDecimals)
+    : 0n;
+  const redeemAmountBNDebounce = redeemAmountDebounce
+    ? parseUnits(redeemAmountDebounce, projectTokenDecimals)
     : 0n;
 
   const { writeContractAsync, isPending: isWriteLoading, data: hash } = useWriteContract();
@@ -137,10 +144,10 @@ export function RedeemDialog(props: PropsWithChildren<Props>) {
   const selectedSurplus = surpluses.find((s) => s.chainId === Number(cashOutChainId));
   const baseDecimals = baseToken?.decimals ?? 18;
 
-  const { data: reclaimableAmount } = useReclaimableSurplus({
+  const { data: reclaimableAmount, isLoading: isSurplusLoading } = useReclaimableSurplus({
     chainId: cashOutChainId ? (Number(cashOutChainId) as JBChainId) : undefined,
     projectId: redeemAmountBN ? effectiveProjectId : undefined,
-    tokenAmount: redeemAmountBN || undefined,
+    tokenAmount: redeemAmountBNDebounce || undefined,
     version,
     decimals: baseDecimals,
     currencyId: selectedSurplus?.currencyId ?? 1,
@@ -211,6 +218,7 @@ export function RedeemDialog(props: PropsWithChildren<Props>) {
                             id="amount"
                             name="amount"
                             value={redeemAmount}
+                            onKeyDown={preventMinusKey}
                             onChange={(e) => setRedeemAmount(e.target.value?.trim())}
                           />
                           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 z-10">
@@ -253,11 +261,14 @@ export function RedeemDialog(props: PropsWithChildren<Props>) {
                   ) : null}
 
                   {redeemAmount && valid ? (
-                    <div className="text-base mt-4">
+                    <div className="flex items-center gap-1 text-base mt-4">
                       You'll get ~{" "}
-                      <span className="font-medium">
-                        {formatDecimals(expectedReclaim, 5)} {baseToken?.symbol}
-                      </span>
+                      <div className="font-medium">
+                        {(isRedeemAmtDebouncing || isSurplusLoading) && redeemAmount ? 
+                          <div className="activeSkeleton h-[22px] my-[1px] w-24 opacity-60 rounded-sm" />
+                        : `${formatDecimals(expectedReclaim, 5)} ${baseToken?.symbol}`
+                        }
+                      </div>
                     </div>
                   ) : null}
 
@@ -271,6 +282,7 @@ export function RedeemDialog(props: PropsWithChildren<Props>) {
               <ButtonWithWallet
                 targetChainId={selectedSucker?.peerChainId}
                 loading={loading || isApproving}
+                disabled={isRedeemAmtDebouncing || isSurplusLoading}
                 onClick={async () => {
                   try {
                     if (
