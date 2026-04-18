@@ -14,6 +14,7 @@ import { PayDialog } from "./PayDialog";
 import { PayFormQuoteDetails } from "./PayFormQuoteDetails";
 import { PayInput } from "./PayInput";
 import { useSelectedSucker } from "./SelectedSuckerContext";
+import { PaySkeleton } from "./PaySkeleton";
 
 export function PayForm() {
   const tokenB = useJBTokenContext().token.data;
@@ -61,7 +62,7 @@ export function PayForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedAmountA, deferredTokenIn, isPriceLoading]);
 
-  if (!tokenB) return "Loading...";
+  if (!tokenB) return <PaySkeleton />;
 
   const _amountA = {
     amount: new FixedInt(
@@ -144,7 +145,7 @@ export function PayForm() {
             name="memo"
             rows={2}
             className={
-              "flex w-full min-h-[40px] h-[40px] border border-zinc-200 bg-white px-3 py-1.5 text-md ring-offset-white file:border-0 file:bg-transparent file:text-md file:font-medium placeholder:text-zinc-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300 z-10"
+              "flex w-full min-h-[40px] h-[40px] border border-zinc-200 bg-white px-3 py-1.5 text-md ring-offset-white file:border-0 file:bg-transparent file:text-md file:font-medium placeholder:text-zinc-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300 z-10 resize-none"
             }
             onChange={(e: any) => setMemo(e.target.value)}
             placeholder="Leave a note"
