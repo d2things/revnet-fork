@@ -17,13 +17,14 @@ import {
 } from "@/generated/graphql";
 import { getTokenConfigForChain, getTokenSymbolFromAddress } from "@/lib/tokenUtils";
 import { formatSeconds } from "@/lib/utils";
-import { getRevnetLoanContract, JB_CHAINS, JBChainId, revLoansAbi } from "juice-sdk-core";
+import { revLoansMap } from "@/lib/v6Maps";
+import { getRevnetLoanContract, JB_CHAINS, JBChainId, revLoansAbi } from "@bananapus/nana-sdk-core";
 import {
   useBendystrawQuery,
   useJBChainId,
   useJBContractContext,
   useJBTokenContext,
-} from "juice-sdk-react";
+} from "@bananapus/nana-sdk-react";
 import { formatUnits } from "viem";
 import { useReadContract } from "wagmi";
 
@@ -69,8 +70,8 @@ function LoanRow({
   const borrowAmount = Number(formatUnits(BigInt(loan.borrowAmount), baseTokenDecimals)).toFixed(4);
 
   // Calculate headroom: current value of collateral - borrowed amount
-  const { data: currentCollateralValue } = useReadContract({
-    abi: revLoansAbi,
+  const { data: currentCollateralValueRaw } = useReadContract({
+    abi: revLoansMap[version].abi,
     chainId: loan.chainId as JBChainId,
     functionName: "borrowableAmountFrom",
     address: getRevnetLoanContract(version, loan.chainId as JBChainId),
@@ -81,6 +82,11 @@ function LoanRow({
       BigInt(chainTokenConfig.currency),
     ],
   });
+
+  const currentCollateralValue =
+    version === 6 && Array.isArray(currentCollateralValueRaw)
+      ? currentCollateralValueRaw[0]
+      : (currentCollateralValueRaw as bigint); 
 
   const headroom =
     currentCollateralValue && currentCollateralValue > BigInt(loan.borrowAmount)

@@ -17,6 +17,8 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss}\""
   },
   "dependencies": {
+    "@bananapus/nana-sdk-core": "^1.1.1",
+    "@bananapus/nana-sdk-react": "^2.0.0",
     "@farcaster/frame-node": "^0.0.20",
     "@farcaster/frame-sdk": "^0.0.45",
     "@farcaster/frame-wagmi-connector": "^0.0.22",

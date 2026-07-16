@@ -1,5 +1,6 @@
-import { JBChainId, jbMultiTerminalAbi, NATIVE_TOKEN, NATIVE_TOKEN_DECIMALS } from "juice-sdk-core";
-import { useJBContractContext } from "juice-sdk-react";
+import { jbMultiTerminalMap } from "@/lib/v6Maps";
+import { JBChainId, NATIVE_TOKEN, NATIVE_TOKEN_DECIMALS } from "@bananapus/nana-sdk-core";
+import { useJBContractContext } from "@bananapus/nana-sdk-react";
 import { useReadContract } from "wagmi";
 
 /**
@@ -22,6 +23,7 @@ export function useTokenSurplus({
 } = {}) {
   const {
     projectId,
+    version,
     contracts: { primaryNativeTerminal },
   } = useJBContractContext();
 
@@ -32,8 +34,23 @@ export function useTokenSurplus({
   const _inTermsOfCurrency = inTermsOfCurrency ?? 1;
   const _inTermsOfDecimals = inTermsOfDecimals ?? NATIVE_TOKEN_DECIMALS;
 
+  if (version === 6) {
+    return useReadContract({
+      abi: jbMultiTerminalMap[version],
+      functionName: "currentSurplusOf",
+      chainId: _chainId,
+      address: primaryNativeTerminal.data ?? undefined,
+      args: [
+        projectId,
+        [_token],
+        BigInt(_inTermsOfDecimals),
+        BigInt(_inTermsOfCurrency),
+      ],
+    });
+  };
+
   return useReadContract({
-    abi: jbMultiTerminalAbi,
+    abi: jbMultiTerminalMap[version],
     functionName: "currentSurplusOf",
     chainId: _chainId,
     address: primaryNativeTerminal.data ?? undefined,

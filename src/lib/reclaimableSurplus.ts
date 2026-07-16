@@ -7,7 +7,7 @@ import {
   jbTerminalStoreAbi,
   JBVersion,
   NATIVE_TOKEN_DECIMALS,
-} from "juice-sdk-core";
+} from "@bananapus/nana-sdk-core";
 import { getContract, parseUnits } from "viem";
 import { toBaseCurrencyId } from "./currency";
 import { applyNanaFee, applyRevFee } from "./feeHelpers";

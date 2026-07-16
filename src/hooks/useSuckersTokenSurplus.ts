@@ -1,11 +1,12 @@
+import { jbMultiTerminalMap } from "@/lib/v6Maps";
 import {
   getJBContractAddress,
   JBChainId,
   JBCoreContracts,
   jbDirectoryAbi,
   jbMultiTerminalAbi,
-} from "juice-sdk-core";
-import { useJBChainId, useJBContractContext, useSuckers } from "juice-sdk-react";
+} from "@bananapus/nana-sdk-core";
+import { useJBChainId, useJBContractContext, useSuckers } from "@bananapus/nana-sdk-react";
 import { getContract } from "viem";
 import { useConfig } from "wagmi";
 import { useQuery } from "wagmi/query";
@@ -79,14 +80,19 @@ export function useSuckersTokenSurplus(
 
           const terminal = getContract({
             address: await directory.read.primaryTerminalOf([projectId, token]),
-            abi: jbMultiTerminalAbi,
+            abi: jbMultiTerminalMap[version],
             client: config.getClient({ chainId: peerChainId }),
           });
 
           try {
+            const tokens =
+              version === 6
+              ? [token]
+              : [{ token: token, decimals: decimals, currency: currency }];
+
             const surplus = await terminal.read.currentSurplusOf([
               projectId,
-              [{ token: token, decimals: decimals, currency: currency }],
+              tokens as any,    // type error from abi versioning
               BigInt(decimals),
               BigInt(currency),
             ]);

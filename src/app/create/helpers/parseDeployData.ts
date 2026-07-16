@@ -12,7 +12,7 @@ import {
   SPLITS_TOTAL_PERCENT,
   USD_CURRENCY_ID,
   WeightCutPercent,
-} from "juice-sdk-core";
+} from "@bananapus/nana-sdk-core";
 import { Address, ContractFunctionParameters, parseUnits, zeroAddress } from "viem";
 import { RevnetFormData } from "../types";
 

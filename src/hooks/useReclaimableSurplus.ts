@@ -1,5 +1,5 @@
 import { applyNanaFee, applyRevFee } from "@/lib/feeHelpers";
-import { getProjectTerminalStore, JBChainId, jbTerminalStoreAbi, JBVersion } from "juice-sdk-core";
+import { getProjectTerminalStore, JBChainId, jbTerminalStoreAbi, JBVersion } from "@bananapus/nana-sdk-core";
 import { useReadContract } from "wagmi";
 
 export function useReclaimableSurplus(params: {
