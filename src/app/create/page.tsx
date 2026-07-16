@@ -12,6 +12,7 @@ import {
   MappableAsset,
   parseSuckerDeployerConfig,
   revDeployerAbi,
+  revDeployerV5Abi,
 } from "@bananapus/nana-sdk-core";
 import { useGetRelayrTxQuote } from "@bananapus/nana-sdk-react";
 import { encodeFunctionData } from "viem";
@@ -55,13 +56,28 @@ export default function Page() {
     const relayrTransactions = [];
 
     for (const chainId of formData.chainIds) {
-      const suckerDeployerConfig = parseSuckerDeployerConfig(chainId, formData.chainIds, [
-        reserveAsset,
-      ]);
+      // v5 path (matches revDeployerV5Abi below). SDK return type is a v5|v6 union, so narrow.
+      const suckerDeployerConfig = parseSuckerDeployerConfig(
+        chainId,
+        formData.chainIds,
+        [reserveAsset],
+        { version: 5 },
+      );
       const deployData = parseDeployData(formData, {
         metadataCid,
         chainId,
-        suckerDeployerConfig,
+        suckerDeployerConfig: {
+          deployerConfigurations:
+            suckerDeployerConfig.deployerConfigurations as {
+              deployer: `0x${string}`;
+              mappings: {
+                localToken: `0x${string}`;
+                remoteToken: `0x${string}`;
+                minGas: number;
+                minBridgeAmount: bigint;
+              }[];
+            }[],
+        },
         timestamp,
         salt,
       });
@@ -69,7 +85,7 @@ export default function Page() {
       console.log({ deployData });
 
       const encodedData = encodeFunctionData({
-        abi: revDeployerAbi, // ABI of the contract
+        abi: revDeployerV5Abi, // v6 revDeployerAbi, // ABI of the contract
         functionName: "deployWith721sFor",
         args: deployData,
       });
@@ -85,7 +101,7 @@ export default function Page() {
       // Estimate gas for the transaction if it were to be send directly to the revDeployer.
       const gasEstimate = await publicClient.estimateContractGas({
         address: jbContractAddress["5"]["REVDeployer"][chainId],
-        abi: revDeployerAbi,
+        abi: revDeployerV5Abi, // revDeployerAbi,  // v6
         functionName: "deployWith721sFor",
         args: deployData,
       });

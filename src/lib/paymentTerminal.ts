@@ -5,6 +5,8 @@ import {
   JBCoreContracts,
   jbDirectoryAbi,
   jbMultiTerminalAbi,
+  jbRouterTerminalAbi,
+  JBRouterTerminalContracts,
   jbSwapTerminalAbi,
   JBSwapTerminalContracts,
   JBVersion,
@@ -38,6 +40,18 @@ export async function getPaymentTerminal(args: {
 
   if (terminal === zeroAddress) {
     return { address: swapTerminal, abi: jbSwapTerminalAbi, type: "swap" };
+  }
+
+  if (version === 6) {
+    const terminal = getJBContractAddress(JBRouterTerminalContracts.JBRouterTerminal, version, chainId);
+    console.log("use jb router terminal", terminal)
+    if (!terminal) throw new Error(`No primary native terminal v6`);
+
+    return {
+      address: terminal,
+      abi: jbRouterTerminalAbi,
+      type: "multi"
+    }
   }
 
   const isSwapTerminal = terminal.toLowerCase() === swapTerminal.toLowerCase();

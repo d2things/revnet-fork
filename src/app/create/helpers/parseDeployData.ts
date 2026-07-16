@@ -9,6 +9,7 @@ import {
   NATIVE_TOKEN,
   NATIVE_TOKEN_DECIMALS,
   revDeployerAbi,
+  revDeployerV5Abi,
   SPLITS_TOTAL_PERCENT,
   USD_CURRENCY_ID,
   WeightCutPercent,
@@ -35,7 +36,8 @@ export function parseDeployData(
     timestamp: number;
     salt: `0x${string}`;
   },
-): ContractFunctionParameters<typeof revDeployerAbi, "nonpayable", "deployWith721sFor">["args"] {
+//): ContractFunctionParameters<typeof revDeployerAbi, "nonpayable", "deployWith721sFor">["args"] { - v6
+): ContractFunctionParameters<typeof revDeployerV5Abi, "nonpayable", "deployWith721sFor">["args"] {
   // hack: stringfy numbers
   const formData: RevnetFormData = JSON.parse(JSON.stringify(_formData), (_, value) =>
     typeof value === "number" ? String(value) : value,
@@ -230,7 +232,7 @@ export function parseDeployData(
     },
     [],
   ] satisfies ContractFunctionParameters<
-    typeof revDeployerAbi,
+    typeof revDeployerV5Abi, // v6
     "nonpayable",
     "deployWith721sFor"
   >["args"];
