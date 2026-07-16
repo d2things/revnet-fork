@@ -268,7 +268,7 @@ export function useBorrowDialog({ projectId, selectedLoan, defaultTab }: UseBorr
   const selectedLoanReallocAmount =
     version === 6 && Array.isArray(selectedLoanRealloc)
       ? selectedLoanRealloc[0]
-      : (selectedLoanRealloc as bigint); 
+      : (selectedLoanRealloc as bigint);
 
   const { data: currentBorrowableOnSelectedCollateralRaw } = useReadContract({
     abi: revLoansMap[version].abi,
@@ -290,7 +290,7 @@ export function useBorrowDialog({ projectId, selectedLoan, defaultTab }: UseBorr
   const currentBorrowableOnSelectedCollateral =
     version === 6 && Array.isArray(currentBorrowableOnSelectedCollateralRaw)
       ? currentBorrowableOnSelectedCollateralRaw[0]
-      : (currentBorrowableOnSelectedCollateralRaw as bigint); 
+      : (currentBorrowableOnSelectedCollateralRaw as bigint);
 
   // Repay-related hooks
   // const { data: estimatedRepayAmountForCollateral, isLoading: isEstimatingRepayment } =
@@ -338,7 +338,7 @@ export function useBorrowDialog({ projectId, selectedLoan, defaultTab }: UseBorr
   const estimatedNewBorrowableAmount =
     version === 6 && Array.isArray(estimatedNewBorrowable)
       ? estimatedNewBorrowable[0]
-      : (estimatedNewBorrowable as bigint); 
+      : (estimatedNewBorrowable as bigint);
 
   // Transaction hooks
   const { writeContractAsync, isPending: isWriteLoading, data: txHash } = useWriteContract();
@@ -744,6 +744,7 @@ export function useBorrowDialog({ projectId, selectedLoan, defaultTab }: UseBorr
       }
     }
   }, [
+    version,
     internalSelectedLoan,
     collateralAmount,
     primaryNativeTerminal?.data,

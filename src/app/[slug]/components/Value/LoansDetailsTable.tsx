@@ -86,7 +86,7 @@ function LoanRow({
   const currentCollateralValue =
     version === 6 && Array.isArray(currentCollateralValueRaw)
       ? currentCollateralValueRaw[0]
-      : (currentCollateralValueRaw as bigint); 
+      : (currentCollateralValueRaw as bigint);
 
   const headroom =
     currentCollateralValue && currentCollateralValue > BigInt(loan.borrowAmount)

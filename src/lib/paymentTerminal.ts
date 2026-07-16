@@ -42,10 +42,11 @@ export async function getPaymentTerminal(args: {
     return { address: swapTerminal, abi: jbSwapTerminalAbi, type: "swap" };
   }
 
+  // review v6
   if (version === 6) {
     const terminal = getJBContractAddress(JBRouterTerminalContracts.JBRouterTerminal, version, chainId);
     console.log("use jb router terminal", terminal)
-    if (!terminal) throw new Error(`No primary native terminal v6`);
+    if (!terminal) throw new Error("No primary native terminal v6");
 
     return {
       address: terminal,

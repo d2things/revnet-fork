@@ -12,20 +12,9 @@ export function useNativeTokenSurplus() {
 
   const chainId = useJBChainId();
 
-  if (version === 6) {
-    return useReadContract({
-      abi: jbMultiTerminalMap[version],
-      functionName: "currentSurplusOf",
-      chainId,
-      address: primaryNativeTerminal.data ?? undefined,
-      args: [
-        projectId,
-        [NATIVE_TOKEN],
-        BigInt(NATIVE_TOKEN_DECIMALS),
-        BigInt(1),
-      ],
-    });
-  };
+  const tokens = version === 6
+    ? [NATIVE_TOKEN]
+    : [{ token: NATIVE_TOKEN, decimals: NATIVE_TOKEN_DECIMALS, currency: 1 }] as any;
 
   return useReadContract({
     abi: jbMultiTerminalMap[version],
@@ -34,7 +23,7 @@ export function useNativeTokenSurplus() {
     address: primaryNativeTerminal.data ?? undefined,
     args: [
       projectId,
-      [{ token: NATIVE_TOKEN, decimals: NATIVE_TOKEN_DECIMALS, currency: 1 }],
+      tokens,
       BigInt(NATIVE_TOKEN_DECIMALS),
       BigInt(1),
     ],

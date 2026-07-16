@@ -34,20 +34,9 @@ export function useTokenSurplus({
   const _inTermsOfCurrency = inTermsOfCurrency ?? 1;
   const _inTermsOfDecimals = inTermsOfDecimals ?? NATIVE_TOKEN_DECIMALS;
 
-  if (version === 6) {
-    return useReadContract({
-      abi: jbMultiTerminalMap[version],
-      functionName: "currentSurplusOf",
-      chainId: _chainId,
-      address: primaryNativeTerminal.data ?? undefined,
-      args: [
-        projectId,
-        [_token],
-        BigInt(_inTermsOfDecimals),
-        BigInt(_inTermsOfCurrency),
-      ],
-    });
-  };
+  const tokens = version === 6
+    ? [_token]
+    : [{ token: _token, decimals: _decimals, currency: _currency }] as any;
 
   return useReadContract({
     abi: jbMultiTerminalMap[version],
@@ -56,7 +45,7 @@ export function useTokenSurplus({
     address: primaryNativeTerminal.data ?? undefined,
     args: [
       projectId,
-      [{ token: _token, decimals: _decimals, currency: _currency }],
+      tokens,
       BigInt(_inTermsOfDecimals),
       BigInt(_inTermsOfCurrency),
     ],

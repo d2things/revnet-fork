@@ -283,7 +283,7 @@ export function RepayDialog({
     } else {
       setCollateralError("");
     }
-  }, [collateralToReturn, loanData, tokenSymbol, projectTokenDecimals]);
+  }, [collateralToReturn, loanData, tokenSymbol, projectTokenDecimals, formatCollateralAmount]);
 
   // Handle transaction status updates
   useEffect(() => {
