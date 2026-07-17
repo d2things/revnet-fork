@@ -39,6 +39,7 @@ export async function getTopProjects() {
         tagline: project.projectTagline,
         logoUrl: project.logoUri ? ipfsUriToGatewayUrl(project.logoUri) : null,
         balanceUsd,
+        version: project.version
       };
     });
 }
