@@ -32,6 +32,7 @@ import { UNISWAP_V3_SWAP_ROUTER_ABI } from "@/lib/uniswap/abis";
 import { UNISWAP_V3_SWAP_ROUTER_ADDRESSES } from "@/lib/uniswap/constants";
 import { formatWalletError } from "@/lib/utils";
 import { JB_CHAINS, JBChainId, TokenAmountType } from "@bananapus/nana-sdk-core";
+import { buildPayTx } from "@bananapus/nana-sdk-core/v6";
 import { useJBContractContext, useSuckers } from "@bananapus/nana-sdk-react";
 import { useEffect } from "react";
 import { useAccount, usePublicClient, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
@@ -147,16 +148,45 @@ export function PayDialog(props: Props) {
           await ensureAllowance(tokenIn.address, terminal.address, value);
         }
 
-        const minTokens = tokenIn.isNative ? 0n : (amountB.amount.value * 95n) / 100n;
+        // Slippage protection for direct multi-terminal pays. Router/swap terminals convert
+        // via market rates that can diverge from the oracle-based quote, so don't enforce
+        // minReturnedTokens there (same as native pays).
+        const minTokens =
+          terminal.type === "multi" && !tokenIn.isNative
+            ? (amountB.amount.value * 95n) / 100n
+            : 0n;
 
-        await writeContractAsync({
-          abi: terminal.abi,
-          functionName: "pay",
-          chainId,
-          address: terminal.address,
-          args: [projectId, tokenIn.address, value, address, minTokens, memo || "", "0x0"],
-          value: tokenIn.isNative ? value : 0n,
-        });
+        if (version === 6) {
+          const request = buildPayTx({
+            chainId,
+            terminal: terminal.address,
+            projectId,
+            token: tokenIn.address,
+            amount: value,
+            beneficiary: address,
+            minReturnedTokens: minTokens,
+            memo: memo || "",
+            metadata: "0x",
+          });
+
+          await writeContractAsync({
+            abi: terminal.abi,
+            functionName: request.functionName,
+            chainId,
+            address: request.address,
+            args: request.args,
+            value: request.value,
+          });
+        } else {
+          await writeContractAsync({
+            abi: terminal.abi,
+            functionName: "pay",
+            chainId,
+            address: terminal.address,
+            args: [projectId, tokenIn.address, value, address, minTokens, memo || "", "0x"],
+            value: tokenIn.isNative ? value : 0n,
+          });
+        }
       }
     } catch (err) {
       console.error("Payment failed:", err);
