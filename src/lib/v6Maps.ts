@@ -1,4 +1,5 @@
-import { jbMultiTerminalAbi, jbMultiTerminalV4Abi, jbMultiTerminalV5Abi, revDeployerAbi, revDeployerV4Abi, revDeployerV5Abi, revLoansAbi, revLoansV4Abi, revLoansV5Abi, RevnetCoreContracts, revOwnerAbi } from "@bananapus/nana-sdk-core";
+import { jbDirectoryAbi, jbDirectoryV4Abi, jbDirectoryV5Abi, jbMultiTerminalAbi, jbMultiTerminalV4Abi, jbMultiTerminalV5Abi, jbTerminalStoreAbi, jbTerminalStoreV4Abi, jbTerminalStoreV5Abi, revDeployerAbi, revDeployerV4Abi, revDeployerV5Abi, revLoansAbi, revLoansV4Abi, revLoansV5Abi, RevnetCoreContracts, revOwnerAbi } from "@bananapus/nana-sdk-core";
+
 
 // Does not require address, ContractProvider provides terminal address
 export const jbMultiTerminalMap = {
@@ -43,3 +44,16 @@ export const revDeployerMap = {
   5: revDeployerV5Abi,
   6: revDeployerAbi
 };
+
+
+export const jbTerminalStoreMap = {
+  4: jbTerminalStoreV4Abi,
+  5: jbTerminalStoreV5Abi,
+  6: jbTerminalStoreAbi
+};
+
+export const jbDirectoryMap = {
+  4: jbDirectoryV4Abi,
+  5: jbDirectoryV5Abi,
+  6: jbDirectoryAbi
+}

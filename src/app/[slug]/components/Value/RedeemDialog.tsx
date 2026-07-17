@@ -150,6 +150,8 @@ export function RedeemDialog(props: PropsWithChildren<Props>) {
     ? Number(formatUnits(reclaimableAmount, baseDecimals))
     : 0;
 
+  console.log(reclaimableAmount, expectedReclaim);
+
   return (
     <Dialog open={disabled === true ? false : undefined}>
       <DialogTrigger asChild>{children}</DialogTrigger>

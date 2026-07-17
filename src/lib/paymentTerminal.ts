@@ -7,12 +7,15 @@ import {
   jbMultiTerminalAbi,
   jbRouterTerminalAbi,
   JBRouterTerminalContracts,
+  jbRouterTerminalRegistryAbi,
   jbSwapTerminalAbi,
   JBSwapTerminalContracts,
   JBVersion,
 } from "@bananapus/nana-sdk-core";
 import { getContract, PublicClient, zeroAddress } from "viem";
 import { Token } from "./token";
+import { jbDirectoryMap } from "./v6Maps";
+import { useJBContractContext } from "@bananapus/nana-sdk-react";
 
 export async function getPaymentTerminal(args: {
   client: PublicClient;
@@ -26,7 +29,7 @@ export async function getPaymentTerminal(args: {
 
   const directory = getContract({
     address: getJBContractAddress(JBCoreContracts.JBDirectory, version, chainId),
-    abi: jbDirectoryAbi,
+    abi: jbDirectoryMap[version],
     client,
   });
 
@@ -42,15 +45,19 @@ export async function getPaymentTerminal(args: {
     return { address: swapTerminal, abi: jbSwapTerminalAbi, type: "swap" };
   }
 
-  // review v6
+  // review v6 // v6
   if (version === 6) {
-    const terminal = getJBContractAddress(JBRouterTerminalContracts.JBRouterTerminal, version, chainId);
-    console.log("use jb router terminal", terminal)
+    const routerTerminal = getJBContractAddress(JBRouterTerminalContracts.JBRouterTerminalRegistry, version, chainId);
+    console.log("use jb router terminal", terminal, routerTerminal)
     if (!terminal) throw new Error("No primary native terminal v6");
 
+    const terminalAbi = terminal.toLowerCase() !== routerTerminal.toLowerCase()
+      ? jbMultiTerminalAbi
+      : jbRouterTerminalRegistryAbi;
+     
     return {
       address: terminal,
-      abi: jbRouterTerminalAbi,
+      abi: terminalAbi,
       type: "multi"
     }
   }
