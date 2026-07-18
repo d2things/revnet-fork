@@ -25,13 +25,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAllowance } from "@/hooks/useAllowance";
 import { useProjectBaseToken } from "@/hooks/useProjectBaseToken";
 import { useTokenBalances } from "@/hooks/useTokenBalances";
-import { getPaymentTerminal } from "@/lib/paymentTerminal";
-import { Pool } from "@/lib/quote";
+import { getPaymentTerminal, resolveBestV6PayRoute } from "@/lib/paymentTerminal";
+import { minReturnedTokens, Pool } from "@/lib/quote";
 import { Token } from "@/lib/token";
 import { UNISWAP_V3_SWAP_ROUTER_ABI } from "@/lib/uniswap/abis";
 import { UNISWAP_V3_SWAP_ROUTER_ADDRESSES } from "@/lib/uniswap/constants";
 import { formatWalletError } from "@/lib/utils";
-import { JB_CHAINS, JBChainId, TokenAmountType } from "@bananapus/nana-sdk-core";
+import { JB_CHAINS, JBChainId, JBVersion, TokenAmountType } from "@bananapus/nana-sdk-core";
 import { buildPayTx } from "@bananapus/nana-sdk-core/v6";
 import { useJBContractContext, useSuckers } from "@bananapus/nana-sdk-react";
 import { useEffect } from "react";
@@ -104,7 +104,7 @@ export function PayDialog(props: Props) {
           await ensureAllowance(tokenIn.address, swapRouterAddress, value);
         }
 
-        const minTokens = (amountB.amount.value * 95n) / 100n;
+        const minTokens = minReturnedTokens(amountB.amount.value, 500n);
 
         const swapParams = {
           tokenIn: tokenIn.address,
@@ -133,60 +133,34 @@ export function PayDialog(props: Props) {
           args: [swapParams],
           value: tokenIn.isNative ? value : 0n,
         });
+      } else if (version === 6) {
+        // v6 USDC
+        await handleV6Pay({
+          publicClient,
+          chainId,
+          projectId,
+          tokenIn,
+          amount: value,
+          beneficiary: address,
+          memo: memo || "",
+          writeContractAsync,
+          ensureAllowance,
+        });
       } else {
-        // Terminal issuance flow
-        const terminal = await getPaymentTerminal({
-          client: publicClient,
+        await handleLegacyPay({
+          publicClient,
           version,
           chainId,
           projectId,
           tokenIn,
           baseToken,
+          amount: value,
+          beneficiary: address,
+          memo: memo || "",
+          quotedPayerTokens: amountB.amount.value,
+          writeContractAsync,
+          ensureAllowance,
         });
-
-        if (!tokenIn.isNative) {
-          await ensureAllowance(tokenIn.address, terminal.address, value);
-        }
-
-        // Slippage protection for direct multi-terminal pays. Router/swap terminals convert
-        // via market rates that can diverge from the oracle-based quote, so don't enforce
-        // minReturnedTokens there (same as native pays).
-        const minTokens =
-          terminal.type === "multi" && !tokenIn.isNative
-            ? (amountB.amount.value * 95n) / 100n
-            : 0n;
-
-        if (version === 6) {
-          const request = buildPayTx({
-            chainId,
-            terminal: terminal.address,
-            projectId,
-            token: tokenIn.address,
-            amount: value,
-            beneficiary: address,
-            minReturnedTokens: minTokens,
-            memo: memo || "",
-            metadata: "0x",
-          });
-
-          await writeContractAsync({
-            abi: terminal.abi,
-            functionName: request.functionName,
-            chainId,
-            address: request.address,
-            args: request.args,
-            value: request.value,
-          });
-        } else {
-          await writeContractAsync({
-            abi: terminal.abi,
-            functionName: "pay",
-            chainId,
-            address: terminal.address,
-            args: [projectId, tokenIn.address, value, address, minTokens, memo || "", "0x"],
-            value: tokenIn.isNative ? value : 0n,
-          });
-        }
       }
     } catch (err) {
       console.error("Payment failed:", err);
@@ -249,6 +223,143 @@ export function PayDialog(props: Props) {
       </DialogContent>
     </Dialog>
   );
+}
+
+// v6 USDC
+async function handleV6Pay(args: {
+  publicClient: NonNullable<ReturnType<typeof usePublicClient>>;
+  chainId: JBChainId;
+  projectId: bigint;
+  tokenIn: Token;
+  amount: bigint;
+  beneficiary: `0x${string}`;
+  memo: string;
+  writeContractAsync: ReturnType<typeof useWriteContract>["writeContractAsync"];
+  ensureAllowance: (
+    tokenAddress: `0x${string}`,
+    spender: `0x${string}`,
+    value: bigint,
+  ) => Promise<`0x${string}` | null>;
+}) {
+  const {
+    publicClient,
+    chainId,
+    projectId,
+    tokenIn,
+    amount,
+    beneficiary,
+    memo,
+    writeContractAsync,
+    ensureAllowance,
+  } = args;
+
+  // v6 USDC
+  // Fresh on-chain route + preview at pay time. Never encode minReturnedTokens from a missing quote.
+  const route = await resolveBestV6PayRoute({
+    client: publicClient,
+    chainId,
+    projectId,
+    token: tokenIn.address,
+    amount,
+    beneficiary,
+  });
+
+  if (!route) {
+    throw new Error("Could not resolve a payment route with a live quote. Please try again.");
+  }
+
+  // v6 USDC
+  const minTokens = minReturnedTokens(route.preview.beneficiaryTokenCount, 100n);
+
+  // v6 USDC
+  if (!tokenIn.isNative) {
+    await ensureAllowance(tokenIn.address, route.address, amount);
+  }
+
+  // v6 USDC
+  const request = buildPayTx({
+    chainId,
+    terminal: route.address,
+    projectId,
+    token: tokenIn.address,
+    amount,
+    beneficiary,
+    minReturnedTokens: minTokens,
+    memo,
+    metadata: "0x",
+  });
+
+  await writeContractAsync({
+    abi: route.abi,
+    functionName: request.functionName,
+    chainId,
+    address: request.address,
+    args: request.args,
+    value: request.value,
+  });
+}
+
+async function handleLegacyPay(args: {
+  publicClient: NonNullable<ReturnType<typeof usePublicClient>>;
+  version: Exclude<JBVersion, 6>;
+  chainId: JBChainId;
+  projectId: bigint;
+  tokenIn: Token;
+  baseToken: NonNullable<ReturnType<typeof useProjectBaseToken>>;
+  amount: bigint;
+  beneficiary: `0x${string}`;
+  memo: string;
+  quotedPayerTokens: bigint;
+  writeContractAsync: ReturnType<typeof useWriteContract>["writeContractAsync"];
+  ensureAllowance: (
+    tokenAddress: `0x${string}`,
+    spender: `0x${string}`,
+    value: bigint,
+  ) => Promise<`0x${string}` | null>;
+}) {
+  const {
+    publicClient,
+    version,
+    chainId,
+    projectId,
+    tokenIn,
+    baseToken,
+    amount,
+    beneficiary,
+    memo,
+    quotedPayerTokens,
+    writeContractAsync,
+    ensureAllowance,
+  } = args;
+
+  const terminal = await getPaymentTerminal({
+    client: publicClient,
+    version,
+    chainId,
+    projectId,
+    tokenIn,
+    baseToken,
+  });
+
+  if (!tokenIn.isNative) {
+    await ensureAllowance(tokenIn.address, terminal.address, amount);
+  }
+
+  // Slippage for direct multi-terminal non-native pays (e.g. USDC-base revnets).
+  // Swap terminals use market rates — leave minReturnedTokens at 0.
+  const minTokens =
+    terminal.type === "multi" && !tokenIn.isNative
+      ? minReturnedTokens(quotedPayerTokens, 500n)
+      : 0n;
+
+  await writeContractAsync({
+    abi: terminal.abi,
+    functionName: "pay",
+    chainId,
+    address: terminal.address,
+    args: [projectId, tokenIn.address, amount, beneficiary, minTokens, memo, "0x"],
+    value: tokenIn.isNative ? amount : 0n,
+  });
 }
 
 interface ChainSelectorProps {

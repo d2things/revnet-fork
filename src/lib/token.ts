@@ -20,7 +20,10 @@ export interface Token {
   decimals: number;
 }
 
-export function getTokensForChain(chainId: JBChainId | undefined): Token[] {
+export function getTokensForChain(
+  chainId: JBChainId | undefined,
+  version?: JBVersion,
+): Token[] {
   if (!chainId) return [];
 
   const tokens: Token[] = [
@@ -32,14 +35,17 @@ export function getTokensForChain(chainId: JBChainId | undefined): Token[] {
     },
   ];
 
-  const usdcAddress = USDC_ADDRESSES[chainId];
-  if (usdcAddress) {
-    tokens.push({
-      symbol: "USDC",
-      address: usdcAddress,
-      isNative: false,
-      decimals: 6,
-    });
+  // v6 USDC
+  if (version === 6) {
+    const usdcAddress = USDC_ADDRESSES[chainId];
+    if (usdcAddress) {
+      tokens.push({
+        symbol: "USDC",
+        address: usdcAddress,
+        isNative: false,
+        decimals: 6,
+      });
+    }
   }
 
   return tokens;

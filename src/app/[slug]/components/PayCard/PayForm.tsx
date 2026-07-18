@@ -6,7 +6,7 @@ import { getTokensForChain, Token } from "@/lib/token";
 import { formatTokenSymbol } from "@/lib/utils";
 import { Field, Formik } from "formik";
 import { FixedInt } from "fpnum";
-import { useJBTokenContext } from "@bananapus/nana-sdk-react";
+import { useJBContractContext, useJBTokenContext } from "@bananapus/nana-sdk-react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { parseUnits } from "viem";
 import { PayDialog } from "./PayDialog";
@@ -15,9 +15,10 @@ import { PayInput } from "./PayInput";
 import { useSelectedSucker } from "./SelectedSuckerContext";
 
 export function PayForm() {
+  const { version } = useJBContractContext();
   const tokenB = useJBTokenContext().token.data;
-  const chainId = useSelectedSucker().selectedSucker.peerChainId;
-  const { tokenAToBQuote, isPriceLoading } = usePaymentQuote(chainId);
+  const { peerChainId: chainId, projectId } = useSelectedSucker().selectedSucker;
+  const { tokenAToBQuote, isPriceLoading } = usePaymentQuote(chainId, projectId);
   const baseToken = useProjectBaseToken();
 
   const [memo, setMemo] = useState<string>();
@@ -27,7 +28,8 @@ export function PayForm() {
   const [amountC, setAmountC] = useState<string>("");
   const [quotes, setQuotes] = useState<PaymentQuotes>({ all: [] });
 
-  const tokens = useMemo(() => getTokensForChain(chainId), [chainId]);
+  // USDC is only offered as a pay token on v6 (not v5 multi-token).
+  const tokens = useMemo(() => getTokensForChain(chainId, version), [chainId, version]);
   const [tokenIn, setTokenIn] = useState<Token | undefined>();
 
   const deferredAmountA = useDeferredValue(amountA);
@@ -35,7 +37,34 @@ export function PayForm() {
 
   useEffect(() => {
     if (!baseToken) return;
-    setTokenIn((s) => tokens.find((t) => t.symbol === s?.symbol) || baseToken);
+
+    // Only update when the selected pay token actually changes. Returning a fresh
+    // baseToken object every render (before memoization) caused infinite setState loops.
+    setTokenIn((prev) => {
+      const next =
+        (prev &&
+          (tokens.find(
+            (t) =>
+              t.address.toLowerCase() === prev.address.toLowerCase() ||
+              t.symbol === prev.symbol,
+          ) ||
+            // Keep prev if it is still the project base token (e.g. USDC-base on v5
+            // where multi-token USDC is not in the list).
+            (prev.address.toLowerCase() === baseToken.address.toLowerCase() ? prev : undefined))) ||
+        tokens.find((t) => t.address.toLowerCase() === baseToken.address.toLowerCase()) ||
+        tokens.find((t) => t.symbol === baseToken.symbol) ||
+        baseToken;
+
+      if (
+        prev &&
+        prev.address.toLowerCase() === next.address.toLowerCase() &&
+        prev.decimals === next.decimals &&
+        prev.symbol === next.symbol
+      ) {
+        return prev;
+      }
+      return next;
+    });
   }, [tokens, baseToken]);
 
   useEffect(() => {
@@ -53,10 +82,13 @@ export function PayForm() {
       if (quotes.bestOnSelectedChain) {
         setAmountB(quotes.bestOnSelectedChain.payerTokens.format(3));
         setAmountC(quotes.bestOnSelectedChain.reservedTokens.format(3));
+      } else {
+        setAmountB("");
+        setAmountC("");
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deferredAmountA, deferredTokenIn, isPriceLoading]);
+  }, [deferredAmountA, deferredTokenIn, isPriceLoading, chainId, projectId]);
 
   if (!tokenB) return "Loading...";
 
@@ -68,8 +100,12 @@ export function PayForm() {
     symbol: tokenIn?.symbol,
   };
 
+  // Prefer the raw quoted bigint for payments so minReturnedTokens isn't
+  // corrupted by format(3) → parseUnits round-trips.
   const _amountB = {
-    amount: new FixedInt(parseUnits(amountB || "0", tokenB.decimals), tokenB.decimals),
+    amount:
+      quotes.bestOnSelectedChain?.payerTokens ??
+      new FixedInt(parseUnits(amountB || "0", tokenB.decimals), tokenB.decimals),
     symbol: tokenB.symbol,
   };
 
@@ -80,6 +116,7 @@ export function PayForm() {
     setQuotes({ all: [] });
     setResetKey((prev) => prev + 1); // Force PayDialog to remount
   }
+
 
   return (
     <div>

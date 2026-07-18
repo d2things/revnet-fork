@@ -11,9 +11,24 @@ import {
   JBSwapTerminalContracts,
   JBVersion,
 } from "@bananapus/nana-sdk-core";
-import { resolvePaymentTerminal } from "@bananapus/nana-sdk-core/v6";
-import { getContract, PublicClient, zeroAddress } from "viem";
+import { previewPay, resolvePaymentTerminal } from "@bananapus/nana-sdk-core/v6";
+import { Address, getContract, PublicClient, zeroAddress } from "viem";
 import { Token } from "./token";
+
+export type PaymentTerminalType = "multi" | "swap";
+
+export type PaymentTerminal = {
+  address: Address;
+  abi: typeof jbMultiTerminalAbi | typeof jbRouterTerminalRegistryAbi | typeof jbSwapTerminalAbi;
+  type: PaymentTerminalType;
+};
+
+export type V6PayRoute = PaymentTerminal & {
+  preview: {
+    beneficiaryTokenCount: bigint;
+    reservedTokenCount: bigint;
+  };
+};
 
 export async function getPaymentTerminal(args: {
   client: PublicClient;
@@ -22,12 +37,11 @@ export async function getPaymentTerminal(args: {
   projectId: bigint;
   tokenIn: Token;
   baseToken: Pick<Token, "isNative">;
-}) {
+}): Promise<PaymentTerminal> {
   const { client, version, chainId, projectId, tokenIn, baseToken } = args;
 
-  // v6 replaced the swap terminal with the router terminal registry, which routes payments
-  // in any token regardless of the project's accounting token. `resolvePaymentTerminal`
-  // falls back to it when the project has no primary terminal for the token.
+  // v6 USDC
+  // v6 router registry accepts any token (incl. USDC) when no primary terminal is set.
   if (version === 6) {
     const resolved = await resolvePaymentTerminal(client, {
       chainId,
@@ -77,6 +91,102 @@ export async function getPaymentTerminal(args: {
     abi: isSwapTerminal ? jbSwapTerminalAbi : jbMultiTerminalAbi,
     type: isSwapTerminal ? "swap" : "multi",
   } as const;
+}
+
+// v6 USDC
+/**
+ * Resolve the best v6 pay route by previewing multi terminal + router registry and
+ * picking the route that returns the most project tokens (ETH or USDC pays).
+ */
+export async function resolveBestV6PayRoute(args: {
+  client: PublicClient;
+  chainId: JBChainId;
+  projectId: bigint;
+  token: Address;
+  amount: bigint;
+  beneficiary: Address;
+}): Promise<V6PayRoute | null> {
+  const { client, chainId, projectId, token, amount, beneficiary } = args;
+  const candidates = v6PayRouteCandidates(chainId);
+  if (!candidates.length) return null;
+
+  const resolved = await Promise.all(
+    candidates.map(async (route) => {
+      try {
+        const preview = await previewPay(client, {
+          chainId,
+          terminal: route.address,
+          projectId,
+          token,
+          amount,
+          beneficiary,
+          metadata: "0x",
+        });
+        return { ...route, preview };
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  let best: V6PayRoute | null = null;
+  for (const candidate of resolved) {
+    if (!candidate) continue;
+    if (candidate.preview.beneficiaryTokenCount < 0n) continue;
+    if (!best || v6PayRouteIsBetter(candidate, best)) best = candidate;
+  }
+
+  return best;
+}
+
+// v6 USDC
+function v6PayRouteCandidates(chainId: JBChainId): PaymentTerminal[] {
+  const routes: PaymentTerminal[] = [];
+
+  try {
+    // v6 USDC
+    const router = getJBContractAddress(
+      JBRouterTerminalContracts.JBRouterTerminalRegistry,
+      6,
+      chainId,
+    );
+    routes.push({
+      address: router,
+      abi: jbRouterTerminalRegistryAbi,
+      type: "swap",
+    });
+  } catch {
+    // Router registry not deployed on this chain.
+  }
+
+  try {
+    const multi = jbContractAddress[6].JBMultiTerminal[chainId];
+    if (multi && !routes.some((r) => r.address.toLowerCase() === multi.toLowerCase())) {
+      routes.push({
+        address: multi,
+        abi: jbMultiTerminalAbi,
+        type: "multi",
+      });
+    }
+  } catch {
+    // Multi terminal not available.
+  }
+
+  return routes;
+}
+
+function v6PayRouteIsBetter(candidate: V6PayRoute, current: V6PayRoute): boolean {
+  const candidateScore = candidate.preview.beneficiaryTokenCount;
+  const currentScore = current.preview.beneficiaryTokenCount;
+  if (candidateScore !== currentScore) return candidateScore > currentScore;
+
+  const candidateTotal =
+    candidateScore + candidate.preview.reservedTokenCount;
+  const currentTotal = currentScore + current.preview.reservedTokenCount;
+  if (candidateTotal !== currentTotal) return candidateTotal > currentTotal;
+
+  // Prefer the direct multi terminal over the router when scores tie.
+  return candidate.type === "multi" && current.type !== "multi";
 }
 
 function getSwapTerminalAddress(version: JBVersion, chainId: JBChainId, isNative: boolean) {
